@@ -1,0 +1,40 @@
+import IO from "IO"
+
+import { WBoolean, WInteger, WString, Wrapped, makeInspector } from "@/Clouseau"
+
+
+
+alias CoolRecord = { age :: Integer, check :: Boolean, name :: String, value :: {} -> Boolean }
+
+instance Introspect CoolRecord {
+  introspect = () => [
+    #[
+      "age",
+      pipe(
+        .age,
+        WInteger,
+      ),
+    ],
+    #[
+      "check",
+      pipe(
+        .check,
+        WBoolean,
+      ),
+    ],
+    #[
+      "name",
+      pipe(
+        .name,
+        WString,
+      ),
+    ],
+  ]
+}
+INSPECTABLE_VALUE_A = { age: 36, check: true, name: "Peter Sellers", value: () => true }
+
+main = () => {
+  i = introspect(INSPECTABLE_VALUE_A)
+  IO.pTrace("MAIN", i)
+  IO.pTrace("IIII", i(INSPECTABLE_VALUE_A))
+}

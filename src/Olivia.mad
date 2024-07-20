@@ -1,0 +1,53 @@
+import Dict from "Dictionary"
+import List from "List"
+import {} from "Number"
+
+
+
+// export type Field a b = Field(String, a -> b)
+export type Contract a = DeviationFromContract(List #[String, Boolean]) | IdenticalByContract
+export type Wrapper a
+  = Wrapped(a)
+  | WBoolean(Boolean)
+  | WString(String)
+  | WChar(Char)
+  | WInteger(Integer)
+  | WFloat(Float)
+  | WByte(Byte)
+  | WShort(Short)
+
+// Since we don't have any introspection, we need to ask the users to define it
+interface Introspect a {
+  introspect :: a -> List #[String, a -> Wrapper b]
+}
+
+
+// makeInspector :: 
+export makeInspector = (template) => {
+  inv = introspect(template)
+  return (thing) => {
+    return pipe(
+      map(where { #[k, accessor] => #[k, accessor(thing)] }),
+      Dict.fromList,
+    )(inv)
+  }
+}
+
+/*
+compareFields :: a -> a -> Contract a
+export compareFields = (a, b) => {
+  i = makeInspector(a)
+  iA = i(a)
+  iB = i(b)
+  return pipe(
+    List.reduce(
+      (agg, x) => where(x) {
+        #[k, v] =>
+          List.append(#[k, v == Dict.get(k, iB)], agg)
+      },
+      [],
+    ),
+    (x) => List.length(x) == 0 ? IdenticalByContract : DeviationFromContract(x),
+  )(Dict.toList(iA))
+}
+*/
