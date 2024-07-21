@@ -1,3 +1,6 @@
+import type { Wrapper } from "@/Olivia"
+
+import List from "List"
 import { assertEquals, test } from "Test"
 
 import {
@@ -27,66 +30,85 @@ alias IRecord = {
   char :: Char,
   float :: Float,
   int :: Integer,
+  short :: Short,
   str :: String,
 }
 
-// type Affirm = Ok(Boolean)
-// Unclear how to capture complex nested values yet
-// custom :: Affirm,
-// dict :: Dictionary String String,
-// tuple :: #[String, String],
-
+introspectRecord = () => [
+  #[
+    "boolean",
+    pipe(
+      .boolean,
+      WBoolean,
+    ),
+  ],
+  #[
+    "byte",
+    pipe(
+      .byte,
+      WByte,
+    ),
+  ],
+  #[
+    "char",
+    pipe(
+      .char,
+      WChar,
+    ),
+  ],
+  #[
+    "float",
+    pipe(
+      .float,
+      WFloat,
+    ),
+  ],
+  #[
+    "int",
+    pipe(
+      .int,
+      WInteger,
+    ),
+  ],
+  #[
+    "str",
+    pipe(
+      .str,
+      WString,
+    ),
+  ],
+  #[
+    "short",
+    pipe(
+      .short,
+      WShort,
+    ),
+  ],
+]
 
 instance Introspect IRecord {
-  introspect = () => [
-    #[
-      "boolean",
-      pipe(
-        .boolean,
-        WBoolean,
-      ),
-    ],
-    #[
-      "byte",
-      pipe(
-        .byte,
-        WByte,
-      ),
-    ],
-    #[
-      "char",
-      pipe(
-        .char,
-        WChar,
-      ),
-    ],
-    #[
-      "float",
-      pipe(
-        .float,
-        WFloat,
-      ),
-    ],
-    #[
-      "int",
-      pipe(
-        .int,
-        WInteger,
-      ),
-    ],
-    #[
-      "str",
-      pipe(
-        .str,
-        WString,
-      ),
-    ],
-  ]
+  introspect = introspectRecord
 }
 
 VALUES = {
-  a: { boolean: true, byte: 42_b, char: '!', float: 402.4_f, int: 292902_i, str: "hello" },
-  b: { boolean: false, byte: 42_b, char: '!', float: 402.4_f, int: 292902_i, str: "hello" },
+  a: {
+    boolean: true,
+    byte: 42_b,
+    char: '!',
+    float: 402.4_f,
+    int: 292902_i,
+    str: "hello",
+    short: 100_s,
+  },
+  b: {
+    boolean: false,
+    byte: 42_b,
+    char: '!',
+    float: 402.4_f,
+    int: 292902_i,
+    str: "hello",
+    short: 100_s,
+  },
 }
 
 test(
@@ -102,6 +124,7 @@ test(
         "float": WFloat(402.4),
         "int": WInteger(292902),
         "str": WString("hello"),
+        "short": WShort(100_s),
       }},
     )
   },
@@ -139,3 +162,32 @@ test(
     )
   },
 )
+
+/*
+
+type Affirm = Ok(Boolean)
+
+alias IComplexRecord = { ...IRecord, custom :: Affirm }
+
+introspectComplexRecord :: IComplexRecord -> List #[String, IComplexRecord -> Wrapper Affirm]
+introspectComplexRecord = () => List.concat(
+  introspectRecord(),
+  [
+    #[
+      "custom",
+      pipe(
+        .custom,
+        Wrapped,
+      ),
+    ],
+  ],
+)
+
+instance Introspect IComplexRecord {
+  introspect = introspectComplexRecord
+}
+
+// Unclear how to capture complex nested values yet
+// dict :: Dictionary String String,
+// tuple :: #[String, String],
+// */

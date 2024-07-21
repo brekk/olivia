@@ -7,7 +7,7 @@ import String from "String"
 
 
 // export type Field a b = Field(String, a -> b)
-export type Contract a = DeviationFromContract(Dictionary String Boolean) | IdenticalByContract
+export type Contract = DeviationFromContract(Dictionary String Boolean) | IdenticalByContract
 export type Wrapper a
   = Wrapped(a)
   | WBoolean(Boolean)
@@ -18,10 +18,14 @@ export type Wrapper a
   | WByte(Byte)
   | WShort(Short)
 
+export alias Introspection a b = List #[String, a -> Wrapper b]
+
 // Since we don't have any introspection, we need to ask the users to define it
 interface Introspect a {
-  introspect :: a -> List #[String, a -> Wrapper b]
+  introspect :: a -> Introspection a b
 }
+
+
 
 makeInspector :: Introspect a => a -> a -> Dictionary String (Wrapper b)
 export makeInspector = (template) => {
@@ -50,7 +54,7 @@ export _reduceOverDictionary = (iA, iB) => List.reduce(
   Dict.toList(iA),
 )
 
-compareFields :: Introspect a => a -> a -> Contract a
+compareFields :: Introspect a => a -> a -> Contract
 export compareFields = (a, b) => {
   i = makeInspector(a)
   iA = i(a)
@@ -62,7 +66,7 @@ export compareFields = (a, b) => {
   )(iB)
 }
 
-summarizeComparison :: Contract a -> String
+summarizeComparison :: Contract -> String
 export summarizeComparison = where {
   DeviationFromContract(raw) =>
     pipe(

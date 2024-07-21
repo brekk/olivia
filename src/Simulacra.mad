@@ -1,0 +1,53 @@
+import type { Random } from "Random"
+
+import type { Introspection } from "@/Olivia"
+
+import List from "List"
+import { fromMaybe } from "Maybe"
+import { boolean, pick } from "Random"
+import String from "String"
+
+import O from "@/Olivia"
+
+
+
+
+/*
+ALL_CHARS = String.toList(
+  `abcdefghijklmnopqrstuvwxyz~!@#$%^&*()_+1234567890-=ABCDEFGHIJKLMNOPQRSTUVWXYZ,./<>?;':"[]\\{}|`,
+)
+
+type Mimic a = Mimic(a)
+
+char :: List Char -> Random -> Char
+char = (chars, seed) => pipe(
+  pick(chars),
+  fromMaybe('?'),
+)(seed)
+
+alias ValueSet = { chars :: List Char }
+
+simulacraWithValues :: Introspect a => ValueSet -> Random -> a -> Mimic a
+export simulacraWithValues = (vs, seed, a) => {
+  i = O.makeInspector(a)
+  return pipe(
+    O.makeInspector,
+    map(
+      where {
+        #[k, v] =>
+          #[
+            k,
+            where(v) {
+              O.WBoolean(_) =>
+                boolean(seed)
+
+              O.WChar(_) =>
+                char(vs.chars, seed)
+            },
+          ]
+      },
+    ),
+    List.reject(where { #[_, x] => x }),
+  )(a)
+}
+// */
