@@ -1,20 +1,32 @@
+import Dict from "Dictionary"
 import IO from "IO"
 
-import { WBoolean, WInteger, WString, Wrapped, makeInspector } from "@/Clouseau"
+import {
+  WBoolean,
+  WInteger,
+  WString,
+  Wrapped,
+  compareFields,
+  makeInspector,
+  summarizeComparison,
+} from "@/Olivia"
 
 
 
 alias CoolRecord = { age :: Integer, check :: Boolean, name :: String, value :: {} -> Boolean }
 
+wrappedAge = #[
+  "age",
+  pipe(
+    .age,
+    WInteger,
+  ),
+]
+
+
 instance Introspect CoolRecord {
   introspect = () => [
-    #[
-      "age",
-      pipe(
-        .age,
-        WInteger,
-      ),
-    ],
+    wrappedAge,
     #[
       "check",
       pipe(
@@ -32,9 +44,29 @@ instance Introspect CoolRecord {
   ]
 }
 INSPECTABLE_VALUE_A = { age: 36, check: true, name: "Peter Sellers", value: () => true }
+INSPECTABLE_VALUE_B = { age: 50, check: false, name: "Steve Martin", value: () => false }
 
 main = () => {
-  i = introspect(INSPECTABLE_VALUE_A)
-  IO.pTrace("MAIN", i)
-  IO.pTrace("IIII", i(INSPECTABLE_VALUE_A))
+  IO.pTrace("WRAPPED AGE?", INSPECTABLE_VALUE_A)
+  // i = introspect(INSPECTABLE_VALUE_A)
+  insp = makeInspector(INSPECTABLE_VALUE_A)
+  IO.pTrace("inspector!", insp)
+  IO.pTrace("A", insp(INSPECTABLE_VALUE_A))
+  IO.pTrace("B", insp(INSPECTABLE_VALUE_B))
+
+  // IO.pTrace("reduce", Dict.toList(insp(INSPECTABLE_VALUE_A)))
+  pipe(
+    compareFields(INSPECTABLE_VALUE_A),
+    IO.pTrace("COMPARED!"),
+    summarizeComparison,
+    IO.pTrace("SUMMARIZE!"),
+  )(INSPECTABLE_VALUE_B)
+
+  pipe(
+    compareFields(INSPECTABLE_VALUE_A),
+    IO.pTrace("COMPARED!"),
+    summarizeComparison,
+    IO.pTrace("SUMMARIZE!"),
+  )(INSPECTABLE_VALUE_A)
+  // IO.pTrace("IIII", i(INSPECTABLE_VALUE_A))
 }

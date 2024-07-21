@@ -1,11 +1,16 @@
 import Dict from "Dictionary"
 import List from "List"
+import { Just, Nothing, fromMaybe } from "Maybe"
 import {} from "Number"
+import String from "String"
 
 
 
 // export type Field a b = Field(String, a -> b)
-export type Contract a = DeviationFromContract(List #[String, Boolean]) | IdenticalByContract
+export type Contract a
+  = DeviationFromContract(List #[String, Boolean])
+  | IdenticalByContract
+  | Different
 export type Wrapper a
   = Wrapped(a)
   | WBoolean(Boolean)
@@ -25,29 +30,59 @@ interface Introspect a {
 // makeInspector :: 
 export makeInspector = (template) => {
   inv = introspect(template)
-  return (thing) => {
-    return pipe(
-      map(where { #[k, accessor] => #[k, accessor(thing)] }),
-      Dict.fromList,
-    )(inv)
-  }
+  return (thing) => pipe(
+    map(where { #[k, accessor] => #[k, accessor(thing)] }),
+    Dict.fromList,
+  )(inv)
 }
+//
+// hook = (x, i) => where(x) {
+//   #[k, fn] =>
+//     #[k, fn(i)]
+// }
 
-/*
-compareFields :: a -> a -> Contract a
+// /*
+compareFields :: Introspect a => a -> a -> Contract a
 export compareFields = (a, b) => {
   i = makeInspector(a)
   iA = i(a)
   iB = i(b)
   return pipe(
     List.reduce(
-      (agg, x) => where(x) {
+      (mAgg, x) => where(x) {
         #[k, v] =>
-          List.append(#[k, v == Dict.get(k, iB)], agg)
+          where(#[mAgg, Dict.get(k, iB)]) {
+            #[Just(agg), Just(bValue)] =>
+              Just(List.append(#[k, v == bValue], agg))
+
+            _ =>
+              Nothing
+          }
       },
-      [],
+      Just([]),
     ),
-    (x) => List.length(x) == 0 ? IdenticalByContract : DeviationFromContract(x),
+    map(List.reject(where { #[_, x] => x })),
+    where {
+      Just(x) =>
+        List.length(x) == 0 ? IdenticalByContract : DeviationFromContract(x)
+
+      _ =>
+        Different
+    },
   )(Dict.toList(iA))
 }
-*/
+
+summarizeComparison :: Contract a -> String
+export summarizeComparison = where {
+  DeviationFromContract(raw) =>
+    pipe(
+      List.reduce((agg, keyedValue) => where(keyedValue) { #[k, _] => List.append(k, agg) }, []),
+      (x) => `These fields: [${String.join("|", x)}] are different`,
+    )(raw)
+
+  IdenticalByContract =>
+    "These two items are identical by contract"
+
+  Different =>
+    "These two items are different"
+}
