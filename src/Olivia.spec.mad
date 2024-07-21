@@ -1,52 +1,141 @@
 import { assertEquals, test } from "Test"
 
-import { WBoolean, WInteger, WString, Wrapped, makeInspector } from "@/Clouseau"
+import {
+  DeviationFromContract,
+  IdenticalByContract,
+  WBoolean,
+  WByte,
+  WChar,
+  // WDictionary,
+  WFloat,
+  WInteger,
+  WShort,
+  WString,
+  // WTuple,
+  Wrapped,
+  _reduceOverDictionary,
+  compareFields,
+  makeInspector,
+  summarizeComparison,
+} from "@/Olivia"
 
 
 
-alias CoolRecord = { age :: Integer, check :: Boolean, name :: String, value :: {} -> Boolean }
+alias IRecord = {
+  boolean :: Boolean,
+  byte :: Byte,
+  char :: Char,
+  float :: Float,
+  int :: Integer,
+  str :: String,
+}
 
-instance Introspect CoolRecord {
+// type Affirm = Ok(Boolean)
+// Unclear how to capture complex nested values yet
+// custom :: Affirm,
+// dict :: Dictionary String String,
+// tuple :: #[String, String],
+
+
+instance Introspect IRecord {
   introspect = () => [
     #[
-      "age",
+      "boolean",
       pipe(
-        .age,
-        WInteger,
-      ),
-    ],
-    #[
-      "check",
-      pipe(
-        .check,
+        .boolean,
         WBoolean,
       ),
     ],
     #[
-      "name",
+      "byte",
       pipe(
-        .name,
+        .byte,
+        WByte,
+      ),
+    ],
+    #[
+      "char",
+      pipe(
+        .char,
+        WChar,
+      ),
+    ],
+    #[
+      "float",
+      pipe(
+        .float,
+        WFloat,
+      ),
+    ],
+    #[
+      "int",
+      pipe(
+        .int,
+        WInteger,
+      ),
+    ],
+    #[
+      "str",
+      pipe(
+        .str,
         WString,
       ),
     ],
   ]
 }
 
-INSPECTABLE_VALUE_A = { age: 36, check: true, name: "Peter Sellers", value: () => true }
-test(
-  "introspect",
-  () => do {
-    i = introspect(INSPECTABLE_VALUE_A)
-    matched = i(INSPECTABLE_VALUE_A)
-    return assertEquals(matched, [])
-  },
-)
+VALUES = {
+  a: { boolean: true, byte: 42_b, char: '!', float: 402.4_f, int: 292902_i, str: "hello" },
+  b: { boolean: false, byte: 42_b, char: '!', float: 402.4_f, int: 292902_i, str: "hello" },
+}
 
 test(
   "makeInspector",
   () => do {
-    inspector = makeInspector(INSPECTABLE_VALUE_A)
-    inspection = inspector(INSPECTABLE_VALUE_A)
-    return assertEquals(inspection, {{}})
+    insp = makeInspector(VALUES.a)
+    return assertEquals(
+      insp(VALUES.a),
+      {{
+        "boolean": WBoolean(true),
+        "byte": WByte(0x2A),
+        "char": WChar('!'),
+        "float": WFloat(402.4),
+        "int": WInteger(292902),
+        "str": WString("hello"),
+      }},
+    )
+  },
+)
+test(
+  "_reduceOverDictionary",
+  () => do {
+    return assertEquals(_reduceOverDictionary({{ "cool": #["cool", "nice"] }}, {{}}), [])
+  },
+)
+
+test(
+  "compareFields",
+  () => do {
+    comp = compareFields(VALUES.a, VALUES.b)
+    _ <- assertEquals(compareFields(VALUES.a, VALUES.a), IdenticalByContract)
+    return assertEquals(comp, DeviationFromContract({{ "boolean": false }}))
+  },
+)
+
+test(
+  "summarizeComparison",
+  () => do {
+    _ <- assertEquals(
+      summarizeComparison(DeviationFromContract({{ "a": true }})),
+      "This field: [a] is different",
+    )
+    _ <- assertEquals(
+      summarizeComparison(DeviationFromContract({{ "a": true, "b": true }})),
+      "These fields: [a, b] are different",
+    )
+    return assertEquals(
+      summarizeComparison(IdenticalByContract),
+      "These two items are identical by contract",
+    )
   },
 )

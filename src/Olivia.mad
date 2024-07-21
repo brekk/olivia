@@ -7,15 +7,12 @@ import String from "String"
 
 
 // export type Field a b = Field(String, a -> b)
-export type Contract a
-  = DeviationFromContract(List #[String, Boolean])
-  | IdenticalByContract
-  | Different
+export type Contract a = DeviationFromContract(Dictionary String Boolean) | IdenticalByContract
 export type Wrapper a
   = Wrapped(a)
   | WBoolean(Boolean)
-  | WString(String)
   | WChar(Char)
+  | WString(String)
   | WInteger(Integer)
   | WFloat(Float)
   | WByte(Byte)
@@ -26,8 +23,7 @@ interface Introspect a {
   introspect :: a -> List #[String, a -> Wrapper b]
 }
 
-
-// makeInspector :: 
+makeInspector :: Introspect a => a -> a -> Dictionary String (Wrapper b)
 export makeInspector = (template) => {
   inv = introspect(template)
   return (thing) => pipe(
@@ -35,54 +31,51 @@ export makeInspector = (template) => {
     Dict.fromList,
   )(inv)
 }
-//
-// hook = (x, i) => where(x) {
-//   #[k, fn] =>
-//     #[k, fn(i)]
-// }
 
-// /*
+_reduceOverDictionary :: Eq a => Dictionary String a
+  -> Dictionary String a
+  -> List #[String, Boolean]
+export _reduceOverDictionary = (iA, iB) => List.reduce(
+  (agg, x) => where(x) {
+    #[k, v] =>
+      where(Dict.get(k, iB)) {
+        Just(bValue) =>
+          List.append(#[k, v == bValue], agg)
+
+        _ =>
+          agg
+      }
+  },
+  [],
+  Dict.toList(iA),
+)
+
 compareFields :: Introspect a => a -> a -> Contract a
 export compareFields = (a, b) => {
   i = makeInspector(a)
   iA = i(a)
   iB = i(b)
   return pipe(
-    List.reduce(
-      (mAgg, x) => where(x) {
-        #[k, v] =>
-          where(#[mAgg, Dict.get(k, iB)]) {
-            #[Just(agg), Just(bValue)] =>
-              Just(List.append(#[k, v == bValue], agg))
-
-            _ =>
-              Nothing
-          }
-      },
-      Just([]),
-    ),
-    map(List.reject(where { #[_, x] => x })),
-    where {
-      Just(x) =>
-        List.length(x) == 0 ? IdenticalByContract : DeviationFromContract(x)
-
-      _ =>
-        Different
-    },
-  )(Dict.toList(iA))
+    _reduceOverDictionary(iA),
+    List.reject(where { #[_, x] => x }),
+    (x) => List.length(x) == 0 ? IdenticalByContract : DeviationFromContract(Dict.fromList(x)),
+  )(iB)
 }
 
 summarizeComparison :: Contract a -> String
 export summarizeComparison = where {
   DeviationFromContract(raw) =>
     pipe(
-      List.reduce((agg, keyedValue) => where(keyedValue) { #[k, _] => List.append(k, agg) }, []),
-      (x) => `These fields: [${String.join("|", x)}] are different`,
+      Dict.keys,
+      (x) => {
+        singular = List.length(x) > 1
+        joined = String.join(", ", x)
+        return !singular
+          ? `This field: [${joined}] is different`
+          : `These fields: [${joined}] are different`
+      },
     )(raw)
 
   IdenticalByContract =>
     "These two items are identical by contract"
-
-  Different =>
-    "These two items are different"
 }
